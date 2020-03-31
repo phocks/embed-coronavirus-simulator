@@ -13,38 +13,42 @@ import styles from "./styles.scss";
 
 const ANIMATION_TICK_LIMIT = 100;
 const RANDOM_INIT_DISTANCE = 20;
-const FPS = 40; // Framerate limit
+const FPS = 60; // Framerate limit
 
 let canvas;
 let context;
 let render;
 let animate;
+let simulation;
 
 let nodesToAdd = [];
 let duration = 2000; // In milliseconds
-let initialDotState = [];
 
 let ticks = 0;
 let startTime = false;
 let runAnimation = true;
-let isAnimating = false;
 
 // Set up our physics
-const simulation = d3
+simulation = d3
   .forceSimulation()
   .force(
     "collide",
     d3
       .forceCollide()
-      .strength(0.8)
+      .strength(0.7)
       .radius(4.5)
       .iterations(1)
   )
   .alpha(1)
-  .alphaDecay(0.2)
+  .alphaDecay(0.0228)
   .alphaMin(0.001)
   .velocityDecay(0.3)
   .stop();
+
+function isAnimating() {
+  if (simulation.alpha() > simulation.alphaMin()) return true;
+  else return false;
+}
 
 // Render a frame to the canvas
 render = simulation => {
@@ -66,6 +70,20 @@ render = simulation => {
   return nodes;
 };
 
+const processFrame = () => {
+  const newNodes = [];
+
+  const nodes = render(simulation);
+
+  simulation.nodes(nodes.concat(newNodes)).tick();
+
+  if (isAnimating()) {
+    requestAnimationFrame(t => {
+      processFrame(t);
+    });
+  }
+};
+
 const Stage = props => {
   const canvasEl = useRef();
   const [windowWidth, windowHeight] = useWindowSize();
@@ -75,6 +93,7 @@ const Stage = props => {
     context = canvas.node().getContext("2d");
 
     animate = time => {
+      // console.log(simulation.alpha());
       if (!startTime) {
         startTime = time;
       }
@@ -117,37 +136,33 @@ const Stage = props => {
         nodesToAdd.length > 0
       ) {
         isAnimating = true;
-        setTimeout(() => {
+
+        if (FPS < 60) {
+          setTimeout(() => {
+            requestAnimationFrame(t => {
+              animate(t, nodesToAdd); // nodesToAdd doesn't matter for now
+            });
+          }, 1000 / FPS);
+        } else {
           requestAnimationFrame(t => {
             animate(t, nodesToAdd); // nodesToAdd doesn't matter for now
           });
-        }, 1000 / FPS);
+        }
       } else {
         isAnimating = false;
       }
     };
   };
 
-  const handleClick = () => {};
+  const handleClick = () => {
+    console.log("User interaction!!!");
+    let dots = [];
 
-  // Run once on mount
-  useLayoutEffect(() => {
-    init();
+    startTime = false;
+    ticks = 0;
 
-    if (runAnimation) {
-      requestAnimationFrame(t => {
-        animate(t, nodesToAdd);
-      });
-    }
-
-    return () => {
-      runAnimation = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    for (let i = 0; i < 50; i++) {
-      initialDotState.push({
+    for (let i = 0; i < 10; i++) {
+      dots.push({
         groupName: "one",
         x:
           windowWidth / 2 +
@@ -160,7 +175,51 @@ const Stage = props => {
       });
     }
 
-    simulation.nodes(initialDotState).stop();
+    if (isAnimating()) {
+      simulation.nodes(simulation.nodes().concat(dots)).alpha(1.0);
+    } else {
+      simulation.nodes(simulation.nodes().concat(dots)).alpha(1.0);
+
+      requestAnimationFrame(t => {
+        processFrame(t);
+      });
+    }
+  };
+
+  // Run once on mount
+  useLayoutEffect(() => {
+    init();
+
+    requestAnimationFrame(t => {
+      processFrame(t);
+    });
+
+    return () => {
+      runAnimation = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let dots = [];
+
+    startTime = false;
+    ticks = 0;
+
+    for (let i = 0; i < 20; i++) {
+      dots.push({
+        groupName: "one",
+        x:
+          windowWidth / 2 +
+          (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
+        y:
+          windowHeight * 0.5 +
+          (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
+        targetX: windowWidth / 2,
+        targetY: windowHeight * 0.5
+      });
+    }
+
+    simulation.nodes(simulation.nodes().concat(dots));
   }, [props, windowWidth, windowHeight]);
 
   useEffect(() => {
