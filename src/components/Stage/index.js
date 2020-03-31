@@ -36,7 +36,7 @@ simulation = d3
     d3
       .forceCollide()
       .strength(0.7)
-      .radius(4.5)
+      .radius(d => d.size)
       .iterations(1)
   )
   .alpha(1)
@@ -62,7 +62,7 @@ render = simulation => {
 
   for (const node of nodes) {
     context.beginPath();
-    context.arc(node.x, node.y, 4, 0, 2 * Math.PI);
+    context.arc(node.x, node.y, node.size, 0, 2 * Math.PI);
     context.fillStyle = "rgba(140, 193, 204, 1.0)";
     context.fill();
   }
@@ -171,7 +171,8 @@ const Stage = props => {
           windowHeight * 0.5 +
           (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
         targetX: windowWidth / 2,
-        targetY: windowHeight * 0.5
+        targetY: windowHeight * 0.5,
+        size: Math.round(Math.random() * 10)
       });
     }
 
