@@ -9,9 +9,9 @@ import { useWindowSize } from "@react-hook/window-size";
 
 import styles from "./styles.scss";
 
-const ANIMATION_TICK_LIMIT = 1200;
-const RANDOM_INIT_DISTANCE = 500;
-const FPS = 40;
+const ANIMATION_TICK_LIMIT = 100;
+const RANDOM_INIT_DISTANCE = 20;
+const FPS = 40; // Framerate limit
 
 let canvas;
 let context;
@@ -31,38 +31,35 @@ let isAnimating = false;
 const Stage = props => {
   const canvasEl = useRef();
   const [windowWidth, windowHeight] = useWindowSize();
-  console.log(windowWidth, windowHeight);
 
-  let centerX = windowWidth / 2;
-  let centerY = windowHeight / 2;
-
+  // Run once on mounts
   useLayoutEffect(() => {
     canvas = d3.select(canvasEl.current);
     context = canvas.node().getContext("2d");
 
     simulation = d3
       .forceSimulation()
-      .force(
-        "x",
-        d3
-          .forceX()
-          .strength(0.2)
-          .x(d => d.targetX)
-      )
-      .force(
-        "y",
-        d3
-          .forceY()
-          .strength(0.2)
-          .y(d => d.targetY)
-      )
-      .force(
-        "center",
-        d3
-          .forceCenter()
-          .x(centerX)
-          .y(centerY)
-      )
+      // .force(
+      //   "x",
+      //   d3
+      //     .forceX()
+      //     .strength(0.2)
+      //     .x(d => d.targetX)
+      // )
+      // .force(
+      //   "y",
+      //   d3
+      //     .forceY()
+      //     .strength(0.2)
+      //     .y(d => d.targetY)
+      // )
+      // .force(
+      //   "center",
+      //   d3
+      //     .forceCenter()
+      //     .x(windowWidth / 2)
+      //     .y(windowHeight / 2)
+      // )
       // .force(
       //   "charge",
       //   d3
@@ -167,12 +164,12 @@ const Stage = props => {
       initialDotState.push({
         groupName: "one",
         x:
-          centerX +
+          windowWidth / 2 +
           (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
         y:
           windowHeight * 0.5 +
           (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
-        targetX: centerX,
+        targetX: windowWidth / 2,
         targetY: windowHeight * 0.5
       });
     }
@@ -181,6 +178,8 @@ const Stage = props => {
   }, [props, windowWidth, windowHeight]);
 
   useEffect(() => {
+    canvas.attr("width", windowWidth).attr("height", windowHeight);
+
     canvasDpiScaler(canvas.node(), context, windowWidth, windowHeight);
   }, [windowWidth, windowHeight]);
 
