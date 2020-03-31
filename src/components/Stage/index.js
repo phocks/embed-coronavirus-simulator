@@ -1,11 +1,13 @@
 import React, { useRef, useLayoutEffect, useEffect } from "react";
+import canvasDpiScaler from "canvas-dpi-scaler";
+import { useWindowSize } from "@react-hook/window-size";
+
+// Setup D3
 const d3 = {
   ...require("d3-selection"),
   ...require("d3-force"),
   ...require("d3-force-reuse")
 };
-import canvasDpiScaler from "canvas-dpi-scaler";
-import { useWindowSize } from "@react-hook/window-size";
 
 import styles from "./styles.scss";
 
@@ -15,7 +17,6 @@ const FPS = 40; // Framerate limit
 
 let canvas;
 let context;
-let simulation;
 let render;
 let animate;
 
@@ -28,72 +29,50 @@ let startTime = false;
 let runAnimation = true;
 let isAnimating = false;
 
+// Set up our physics
+const simulation = d3
+  .forceSimulation()
+  .force(
+    "collide",
+    d3
+      .forceCollide()
+      .strength(0.8)
+      .radius(4.5)
+      .iterations(1)
+  )
+  .alpha(1)
+  .alphaDecay(0.2)
+  .alphaMin(0.001)
+  .velocityDecay(0.3)
+  .stop();
+
+// Render a frame to the canvas
+render = simulation => {
+  const nodes = simulation.nodes();
+  context.clearRect(
+    0,
+    0,
+    context.canvas.clientWidth,
+    context.canvas.clientHeight
+  );
+
+  for (const node of nodes) {
+    context.beginPath();
+    context.arc(node.x, node.y, 4, 0, 2 * Math.PI);
+    context.fillStyle = "rgba(140, 193, 204, 1.0)";
+    context.fill();
+  }
+
+  return nodes;
+};
+
 const Stage = props => {
   const canvasEl = useRef();
   const [windowWidth, windowHeight] = useWindowSize();
 
-  // Run once on mounts
-  useLayoutEffect(() => {
+  const init = () => {
     canvas = d3.select(canvasEl.current);
     context = canvas.node().getContext("2d");
-
-    simulation = d3
-      .forceSimulation()
-      // .force(
-      //   "x",
-      //   d3
-      //     .forceX()
-      //     .strength(0.2)
-      //     .x(d => d.targetX)
-      // )
-      // .force(
-      //   "y",
-      //   d3
-      //     .forceY()
-      //     .strength(0.2)
-      //     .y(d => d.targetY)
-      // )
-      // .force(
-      //   "center",
-      //   d3
-      //     .forceCenter()
-      //     .x(windowWidth / 2)
-      //     .y(windowHeight / 2)
-      // )
-      // .force(
-      //   "charge",
-      //   d3
-      //     .forceManyBodyReuse()
-      //     .strength(-13)
-      //     .theta(0.9)
-      // )
-      .force(
-        "collide",
-        d3
-          .forceCollide()
-          .strength(0.8)
-          .radius(4.5)
-          .iterations(1)
-      )
-      .alpha(1)
-      .alphaDecay(0.2)
-      .alphaMin(0.001)
-      .velocityDecay(0.3)
-      .stop();
-
-    render = () => {
-      const nodes = simulation.nodes();
-      context.clearRect(0, 0, windowWidth, windowHeight);
-
-      for (const node of nodes) {
-        context.beginPath();
-        context.arc(node.x, node.y, 4, 0, 2 * Math.PI);
-        context.fillStyle = "rgba(140, 193, 204, 1.0)";
-        context.fill();
-      }
-
-      return nodes;
-    };
 
     animate = time => {
       if (!startTime) {
@@ -101,7 +80,7 @@ const Stage = props => {
       }
 
       const progress = time - startTime;
-      const nodes = render();
+      const nodes = render(simulation);
       const newNodes = [];
 
       for (let i = 0; i < nodesToAdd.length; i++) {
@@ -147,6 +126,13 @@ const Stage = props => {
         isAnimating = false;
       }
     };
+  };
+
+  const handleClick = () => {};
+
+  // Run once on mount
+  useLayoutEffect(() => {
+    init();
 
     if (runAnimation) {
       requestAnimationFrame(t => {
@@ -185,7 +171,7 @@ const Stage = props => {
 
   return (
     <div className={styles.root}>
-      <canvas className={styles.canvas} ref={canvasEl} />
+      <canvas className={styles.canvas} ref={canvasEl} onClick={handleClick} />
     </div>
   );
 };
