@@ -172,7 +172,7 @@ const Stage = props => {
           (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
         targetX: windowWidth / 2,
         targetY: windowHeight * 0.5,
-        size: Math.round(Math.random() * 10)
+        size: Math.ceil(Math.random() * 20 + 2)
       });
     }
 
