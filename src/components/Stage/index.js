@@ -23,7 +23,6 @@ let context;
 let render;
 let animate;
 let simulation;
-let data;
 
 let nodesToAdd = [];
 let duration = 2000; // In milliseconds
@@ -55,9 +54,23 @@ simulation = d3
     "collide",
     d3
       .forceCollide()
-      .strength(0.7)
+      .strength(0.5)
       .radius(d => d.size)
       .iterations(1)
+  )
+  .force(
+    'x',
+    d3
+      .forceX()
+      .strength(0.002)
+      .x(d => d.targetX)
+  )
+  .force(
+    'y',
+    d3
+      .forceY()
+      .strength(0.002)
+      .y(d => d.targetY)
   )
   .alpha(1)
   .alphaDecay(0.0228)
@@ -108,6 +121,7 @@ const processFrame = () => {
 const Stage = props => {
   const canvasEl = useRef();
   const [windowWidth, windowHeight] = useWindowSize();
+  const [data, setData] = useState(null);
   const [date, setDate] = useState(dayjs("2019-12-31"));
 
   console.log(date.format(DATE_FORMAT));
@@ -177,45 +191,93 @@ const Stage = props => {
       }
     };
 
-    data = await getData(
+    const response = await getData(
       "https://www.abc.net.au/dat/news/interactives/covid19-data/hybrid-country-totals.json"
     );
 
-    console.log(data);
+    setData(response.data);
   };
 
   const handleClick = () => {
     console.log("User interaction!!!");
+    const newDate = date.add(1, "day");
+    setDate(newDate);
+
+    // let dots = [];
+
+    // startTime = false;
+    // ticks = 0;
+
+    // for (let i = 0; i < 10; i++) {
+    //   dots.push({
+    //     groupName: "one",
+    //     x:
+    //       windowWidth / 2 +
+    //       (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
+    //     y:
+    //       windowHeight * 0.5 +
+    //       (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
+    //     targetX: windowWidth / 2,
+    //     targetY: windowHeight * 0.5,
+    //     size: Math.ceil(Math.random() * 20 + 2)
+    //   });
+    // }
+
+    // if (isAnimating()) {
+    //   simulation.nodes(simulation.nodes().concat(dots)).alpha(1.0);
+    // } else {
+    //   simulation.nodes(simulation.nodes().concat(dots)).alpha(1.0);
+
+    //   requestAnimationFrame(t => {
+    //     processFrame(t);
+    //   });
+    // }
+  };
+
+  // Fires when we get data changes
+  useEffect(() => {
+    if (typeof data === "null") return;
+
     let dots = [];
 
-    startTime = false;
-    ticks = 0;
+    // startTime = false;
+    // ticks = 0;
 
-    for (let i = 0; i < 10; i++) {
+    // for (let i = 0; i < 20; i++) {
+    for (const countryName in data) {
+      const count = data[countryName][date.format(DATE_FORMAT)];
+      if (typeof count === "undefined" || count === 0) continue;
+
       dots.push({
         groupName: "one",
         x:
-          windowWidth / 2 +
+          windowWidth / 2 
+          +
           (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
         y:
-          windowHeight * 0.5 +
+          windowHeight * 0.5 
+          +
           (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
         targetX: windowWidth / 2,
         targetY: windowHeight * 0.5,
-        size: Math.ceil(Math.random() * 20 + 2)
+        size: calculateRadius(count)
       });
     }
 
+    
+
     if (isAnimating()) {
-      simulation.nodes(simulation.nodes().concat(dots)).alpha(1.0);
+      // simulation.nodes(simulation.nodes().concat(dots)).alpha(1.0);
+      simulation.nodes(dots).alpha(1.0);
     } else {
-      simulation.nodes(simulation.nodes().concat(dots)).alpha(1.0);
+
+      simulation.nodes(dots).alpha(1.0);
 
       requestAnimationFrame(t => {
         processFrame(t);
       });
     }
-  };
+  }, [data, date]);
 
   // Run once on mount
   useLayoutEffect(() => {
@@ -231,29 +293,6 @@ const Stage = props => {
   }, []);
 
   useEffect(() => {
-    let dots = [];
-
-    startTime = false;
-    ticks = 0;
-
-    for (let i = 0; i < 20; i++) {
-      dots.push({
-        groupName: "one",
-        x:
-          windowWidth / 2 +
-          (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
-        y:
-          windowHeight * 0.5 +
-          (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
-        targetX: windowWidth / 2,
-        targetY: windowHeight * 0.5
-      });
-    }
-
-    simulation.nodes(simulation.nodes().concat(dots));
-  }, [props, windowWidth, windowHeight]);
-
-  useEffect(() => {
     canvas.attr("width", windowWidth).attr("height", windowHeight);
 
     canvasDpiScaler(canvas.node(), context, windowWidth, windowHeight);
@@ -261,10 +300,16 @@ const Stage = props => {
 
   return (
     <div className={styles.root}>
-      <div>{date.format(DATE_FORMAT)}</div>
+      <div className={styles.date}>{date.format(DATE_FORMAT)}</div>
       <canvas className={styles.canvas} ref={canvasEl} onClick={handleClick} />
     </div>
   );
 };
 
 export default Stage;
+
+function calculateRadius(area) {
+  const radiusSquared = area / Math.PI;
+
+  return Math.sqrt(radiusSquared);
+}
