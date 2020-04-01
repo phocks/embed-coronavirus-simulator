@@ -1,7 +1,11 @@
 .root {
+  min-height: 100vh;
   background-color: #f3fcfc;
 }
 
 canvas {
+  position: absolute;
   display: block;
+  top: 0;
+  left: 0;
 }

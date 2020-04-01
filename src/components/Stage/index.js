@@ -1,6 +1,7 @@
-import React, { useRef, useLayoutEffect, useEffect } from "react";
+import React, { useRef, useLayoutEffect, useEffect, useState } from "react";
 import canvasDpiScaler from "canvas-dpi-scaler";
 import { useWindowSize } from "@react-hook/window-size";
+import axios from "axios";
 
 // Setup D3
 const d3 = {
@@ -10,16 +11,19 @@ const d3 = {
 };
 
 import styles from "./styles.scss";
+import dayjs from "dayjs";
 
 const ANIMATION_TICK_LIMIT = 100;
 const RANDOM_INIT_DISTANCE = 20;
 const FPS = 60; // Framerate limit
+const DATE_FORMAT = "YYYY-MM-DD";
 
 let canvas;
 let context;
 let render;
 let animate;
 let simulation;
+let data;
 
 let nodesToAdd = [];
 let duration = 2000; // In milliseconds
@@ -27,6 +31,22 @@ let duration = 2000; // In milliseconds
 let ticks = 0;
 let startTime = false;
 let runAnimation = true;
+
+// Function to fetch data from a URL asyncronously
+const getData = async url => {
+  try {
+    const response = await axios({
+      method: "get",
+      url: url,
+      responseType: "stream"
+    });
+
+    return response;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+};
 
 // Set up our physics
 simulation = d3
@@ -84,11 +104,15 @@ const processFrame = () => {
   }
 };
 
+// React component starts here
 const Stage = props => {
   const canvasEl = useRef();
   const [windowWidth, windowHeight] = useWindowSize();
+  const [date, setDate] = useState(dayjs("2019-12-31"));
 
-  const init = () => {
+  console.log(date.format(DATE_FORMAT));
+
+  const init = async () => {
     canvas = d3.select(canvasEl.current);
     context = canvas.node().getContext("2d");
 
@@ -152,6 +176,12 @@ const Stage = props => {
         isAnimating = false;
       }
     };
+
+    data = await getData(
+      "https://www.abc.net.au/dat/news/interactives/covid19-data/hybrid-country-totals.json"
+    );
+
+    console.log(data);
   };
 
   const handleClick = () => {
@@ -231,6 +261,7 @@ const Stage = props => {
 
   return (
     <div className={styles.root}>
+      <div>{date.format(DATE_FORMAT)}</div>
       <canvas className={styles.canvas} ref={canvasEl} onClick={handleClick} />
     </div>
   );
