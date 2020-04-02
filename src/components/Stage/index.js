@@ -7,20 +7,35 @@ import axios from "axios";
 const d3 = {
   ...require("d3-selection"),
   ...require("d3-force"),
-  ...require("d3-force-reuse")
+  ...require("d3-force-reuse"),
+  ...require("d3-scale"),
+  ...require("d3-scale-chromatic")
 };
 
 import styles from "./styles.scss";
 import dayjs from "dayjs";
 
 const ANIMATION_TICK_LIMIT = 100;
-const RANDOM_INIT_DISTANCE = 20;
+const RANDOM_INIT_DISTANCE = 200;
 const FPS = 60; // Framerate limit
 const DATE_FORMAT = "YYYY-MM-DD";
 
-// Some variables to change
-let filterCountries = false;
-let countriesToShow = ["China", "US", "Australia", "Italy", "Iran", "Spain", "Germany"];
+// Some knobs to turn
+const filterCountries = false;
+const countriesToShow = [
+  "China",
+  "US",
+  "Australia",
+  "Italy",
+  "Iran",
+  "Spain",
+  "Germany",
+  "Korea, South",
+  "France",
+  "Switzerland"
+];
+const startDate = "2020-02-16";
+let sizeFilter = 500;
 
 let canvas;
 let context;
@@ -34,6 +49,8 @@ let duration = 2000; // In milliseconds
 let ticks = 0;
 let startTime = false;
 let runAnimation = true;
+
+var generateColor = d3.scaleOrdinal(d3.schemeTableau10);
 
 // Function to fetch data from a URL asyncronously
 const getData = async url => {
@@ -97,20 +114,24 @@ render = simulation => {
     context.canvas.clientHeight
   );
 
-  for (const node of nodes) {
+  nodes.forEach((node, iteration) => {
+    if (node.size < calculateRadius(sizeFilter)) return;
+
     context.beginPath();
     context.arc(node.x, node.y, node.size, 0, 2 * Math.PI);
-    context.fillStyle = "rgba(140, 193, 204, 1.0)";
+    context.fillStyle =
+      node.name === "Australia" ? "#ff0000" : generateColor(iteration); //"rgba(140, 193, 204, 1.0)";
     context.fill();
-  }
+  });
 
   for (const node of nodes) {
+    if (node.size < calculateRadius(sizeFilter)) continue;
     // Draw node text over the top
     context.font = "11px Arial";
     context.textAlign = "center";
-    context.strokeStyle = "rgba(255, 255, 255, 1.0)";
+    context.strokeStyle = "rgba(255, 255, 255, 0.3)";
     context.strokeText(node.name, node.x, node.y - 10);
-    context.fillStyle = "rgba(111, 111, 111, 1.0)";
+    context.fillStyle = "rgba(11, 11, 11, 1.0)";
     context.fillText(node.name, node.x, node.y - 10);
   }
 
@@ -136,7 +157,7 @@ const Stage = props => {
   const canvasEl = useRef();
   const [windowWidth, windowHeight] = useWindowSize();
   const [data, setData] = useState(null);
-  const [date, setDate] = useState(dayjs("2019-12-31"));
+  const [date, setDate] = useState(dayjs(startDate));
 
   console.log(date.format(DATE_FORMAT));
 
