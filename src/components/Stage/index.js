@@ -18,6 +18,10 @@ const RANDOM_INIT_DISTANCE = 20;
 const FPS = 60; // Framerate limit
 const DATE_FORMAT = "YYYY-MM-DD";
 
+// Some variables to change
+let filterCountries = false;
+let countriesToShow = ["China", "US", "Australia", "Italy", "Iran", "Spain", "Germany"];
+
 let canvas;
 let context;
 let render;
@@ -98,6 +102,16 @@ render = simulation => {
     context.arc(node.x, node.y, node.size, 0, 2 * Math.PI);
     context.fillStyle = "rgba(140, 193, 204, 1.0)";
     context.fill();
+  }
+
+  for (const node of nodes) {
+    // Draw node text over the top
+    context.font = "11px Arial";
+    context.textAlign = "center";
+    context.strokeStyle = "rgba(255, 255, 255, 1.0)";
+    context.strokeText(node.name, node.x, node.y - 10);
+    context.fillStyle = "rgba(111, 111, 111, 1.0)";
+    context.fillText(node.name, node.x, node.y - 10);
   }
 
   return nodes;
@@ -196,7 +210,19 @@ const Stage = props => {
       "https://www.abc.net.au/dat/news/interactives/covid19-data/hybrid-country-totals.json"
     );
 
-    setData(response.data);
+    // Do some filtering
+    const filteredData = {};
+
+    for (const country in response.data) {
+      if (countriesToShow.includes(country)) {
+        filteredData[country] = response.data[country];
+      }
+    }
+
+    console.log(filteredData);
+
+    if (filterCountries) setData(filteredData);
+    else setData(response.data);
   };
 
   const handleClick = () => {
@@ -236,6 +262,7 @@ const Stage = props => {
   };
 
   // Fires when we get data changes
+  // or date changes
   useEffect(() => {
     if (typeof data === "null") return;
 
