@@ -2,7 +2,7 @@ import React, { useRef, useLayoutEffect, useEffect, useState } from "react";
 import canvasDpiScaler from "canvas-dpi-scaler";
 import { useWindowSize } from "@react-hook/window-size";
 import axios from "axios";
-import InputRange from 'react-input-range';
+import InputRange from "react-input-range";
 
 // Setup D3
 const d3 = {
@@ -22,11 +22,11 @@ const FPS = 60; // Framerate limit
 const DATE_FORMAT = "YYYY-MM-DD";
 
 // Some knobs to turn
-const filterCountries = true;
+const filterCountries = false;
 const countriesToShow = [
   "China",
   "US",
-  "Australia",
+  "Australia"
   // "Italy",
   // "Iran",
   // "Spain",
@@ -35,7 +35,7 @@ const countriesToShow = [
   // "France",
   // "Switzerland"
 ];
-const startDate = "2020-02-16";
+const startDate = "2020-01-20";
 let sizeFilter = 500;
 
 let canvas;
@@ -52,6 +52,10 @@ let startTime = false;
 let runAnimation = true;
 
 var generateColor = d3.scaleOrdinal(d3.schemeTableau10);
+const scaleY = d3
+  .scaleLinear()
+  .domain([0, 0.5])
+  .range([0, window.innerHeight]);
 
 // Function to fetch data from a URL asyncronously
 const getData = async url => {
@@ -76,7 +80,7 @@ simulation = d3
     "collide",
     d3
       .forceCollide()
-      .strength(0.5)
+      .strength(0.019)
       .radius(d => d.size)
       .iterations(1)
   )
@@ -84,16 +88,16 @@ simulation = d3
   //   "x",
   //   d3
   //     .forceX()
-  //     .strength(0.002)
+  //     .strength(0.2)
   //     .x(d => d.targetX)
   // )
-  // .force(
-  //   "y",
-  //   d3
-  //     .forceY()
-  //     .strength(0.002)
-  //     .y(d => d.targetY)
-  // )
+  .force(
+    "y",
+    d3
+      .forceY()
+      .strength(0.02)
+      .y(d => d.targetY)
+  )
   .alpha(1)
   .alphaDecay(0.0228)
   .alphaMin(0.001)
@@ -159,8 +163,6 @@ const Stage = props => {
   const [windowWidth, windowHeight] = useWindowSize();
   const [data, setData] = useState(null);
   const [date, setDate] = useState(dayjs(startDate));
-
-  console.log(date.format(DATE_FORMAT));
 
   const init = async () => {
     canvas = d3.select(canvasEl.current);
@@ -286,44 +288,39 @@ const Stage = props => {
   // Fires when we get data changes
   // or date changes
   useEffect(() => {
+    // Wait until we have data
     if (typeof data === "null") return;
 
     let nodes = simulation.nodes();
 
-    // for (const countryName in data) {
-    //   const count = data[countryName][date.format(DATE_FORMAT)];
-    //   if (typeof count === "undefined" || count === 0) continue;
-
-    //   dots.push({
-    //     groupName: "one",
-    //     x:
-    //       windowWidth / 2
-    //       +
-    //       (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
-    //     y:
-    //       windowHeight * 0.5
-    //       +
-    //       (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
-    //     targetX: windowWidth / 2,
-    //     targetY: windowHeight * 0.5,
-    //     size: calculateRadius(count)
-    //   });
-    // }
-
     for (const countryName in data) {
       const count = data[countryName][date.format(DATE_FORMAT)];
       if (typeof count === "undefined" || count === 0) continue;
+
+      // Calculate growth rate
+      const theDayBefore = date.subtract(1, "day").format(DATE_FORMAT);
+      const countYesterday = data[countryName][theDayBefore];
+
+      const growthRate =
+        countYesterday === 0 ? 0 : (count - countYesterday) / countYesterday;
+
+      console.log(countryName, growthRate);
 
       let shouldAdd = true;
 
       for (const node of nodes) {
         if (node.name === countryName) {
           node.size = calculateRadius(count);
+          node.growth = growthRate;
+          node.targetY =
+            windowHeight * 0.9 - scaleY(growthRate) > 100
+              ? windowHeight * 0.9 - scaleY(growthRate)
+              : 100;
           shouldAdd = false;
         }
       }
 
-      if (shouldAdd) {
+      if (shouldAdd && count > sizeFilter) {
         nodes.push({
           name: countryName,
           x:
@@ -333,11 +330,19 @@ const Stage = props => {
             windowHeight * 0.5 +
             (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
           targetX: windowWidth / 2,
-          targetY: windowHeight * 0.5,
-          size: calculateRadius(count)
+          targetY: windowHeight * 0.9 - scaleY(growthRate) > 100
+          ? windowHeight * 0.9 - scaleY(growthRate)
+          : 100,
+          size: calculateRadius(count),
+          growth: 0.0
         });
       }
     }
+
+    // Here we wanna limit to a certain number of nodes if possible
+    // const limitedNumberNodes = nodes.filter(node => {
+      
+    // })
 
     if (isAnimating()) {
       // simulation.nodes(simulation.nodes().concat(dots)).alpha(1.0);
