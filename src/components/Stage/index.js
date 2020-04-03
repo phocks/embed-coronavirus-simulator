@@ -2,6 +2,7 @@ import React, { useRef, useLayoutEffect, useEffect, useState } from "react";
 import canvasDpiScaler from "canvas-dpi-scaler";
 import { useWindowSize } from "@react-hook/window-size";
 import axios from "axios";
+import InputRange from 'react-input-range';
 
 // Setup D3
 const d3 = {
@@ -21,18 +22,18 @@ const FPS = 60; // Framerate limit
 const DATE_FORMAT = "YYYY-MM-DD";
 
 // Some knobs to turn
-const filterCountries = false;
+const filterCountries = true;
 const countriesToShow = [
   "China",
   "US",
   "Australia",
-  "Italy",
-  "Iran",
-  "Spain",
-  "Germany",
-  "Korea, South",
-  "France",
-  "Switzerland"
+  // "Italy",
+  // "Iran",
+  // "Spain",
+  // "Germany",
+  // "Korea, South",
+  // "France",
+  // "Switzerland"
 ];
 const startDate = "2020-02-16";
 let sizeFilter = 500;
@@ -372,6 +373,11 @@ const Stage = props => {
   return (
     <div className={styles.root}>
       <div className={styles.date}>{date.format(DATE_FORMAT)}</div>
+      {/* <InputRange
+        maxValue={20}
+        minValue={0}
+        value={20}
+        onChange={value => {}} /> */}
       <canvas className={styles.canvas} ref={canvasEl} onClick={handleClick} />
     </div>
   );
