@@ -35,13 +35,12 @@ const countriesToShow = [
   // "France",
   // "Switzerland"
 ];
-const startDate = "2020-01-20";
+const startDate = "2020-01-01";
 let sizeFilter = 500;
 
 let canvas;
 let context;
 let render;
-let animate;
 let simulation;
 
 let nodesToAdd = [];

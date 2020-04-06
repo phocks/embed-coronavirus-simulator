@@ -1,0 +1,15 @@
+.root {
+  height: 100%;
+  background-color: #f3fcfc;
+
+  .date {
+    padding: 20px;
+  }
+}
+
+canvas {
+  position: absolute;
+  display: block;
+  top: 0;
+  left: 0;
+}
