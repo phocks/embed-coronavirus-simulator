@@ -36,7 +36,7 @@ const countriesToShow = [
   // "Switzerland"
 ];
 const startDate = "2020-01-01";
-let sizeFilter = 500;
+let sizeFilter = 0;
 
 let canvas;
 let context;
@@ -111,12 +111,13 @@ function isAnimating() {
 // Render a frame to the canvas
 render = simulation => {
   const nodes = simulation.nodes();
-  context.clearRect(
-    0,
-    0,
-    context.canvas.clientWidth,
-    context.canvas.clientHeight
-  );
+
+  // context.clearRect(
+  //   0,
+  //   0,
+  //   context.canvas.clientWidth,
+  //   context.canvas.clientHeight
+  // );
 
   nodes.forEach((node, iteration) => {
     if (node.size < calculateRadius(sizeFilter)) return;
@@ -128,16 +129,17 @@ render = simulation => {
     context.fill();
   });
 
-  for (const node of nodes) {
-    if (node.size < calculateRadius(sizeFilter)) continue;
-    // Draw node text over the top
-    context.font = "11px Arial";
-    context.textAlign = "center";
-    context.strokeStyle = "rgba(255, 255, 255, 0.3)";
-    context.strokeText(node.name, node.x, node.y - 10);
-    context.fillStyle = "rgba(11, 11, 11, 1.0)";
-    context.fillText(node.name, node.x, node.y - 10);
-  }
+  // Render text
+  // for (const node of nodes) {
+  //   if (node.size < calculateRadius(sizeFilter)) continue;
+  //   // Draw node text over the top
+  //   context.font = "11px Arial";
+  //   context.textAlign = "center";
+  //   context.strokeStyle = "rgba(255, 255, 255, 0.3)";
+  //   context.strokeText(node.name, node.x, node.y - 10);
+  //   context.fillStyle = "rgba(11, 11, 11, 1.0)";
+  //   context.fillText(node.name, node.x, node.y - 10);
+  // }
 
   return nodes;
 };
@@ -290,7 +292,63 @@ const Stage = props => {
     // Wait until we have data
     if (typeof data === "null") return;
 
-    let nodes = simulation.nodes();
+    // let nodes = simulation.nodes();
+
+    // for (const countryName in data) {
+    //   const count = data[countryName][date.format(DATE_FORMAT)];
+    //   if (typeof count === "undefined" || count === 0) continue;
+
+    //   // Calculate growth rate
+    //   const theDayBefore = date.subtract(1, "day").format(DATE_FORMAT);
+    //   const countYesterday = data[countryName][theDayBefore];
+
+    //   const growthRate =
+    //     countYesterday === 0 ? 0 : (count - countYesterday) / countYesterday;
+
+    //   const newCases = count - countYesterday;
+
+    //   console.log(countryName, newCases);
+
+    //   let shouldAdd = true;
+
+    //   for (const node of nodes) {
+    //     if (node.name === countryName) {
+    //       node.size = calculateRadius(count);
+    //       node.growth = newCases;
+    //       node.targetY =
+    //         windowHeight * 0.9 - scaleY(newCases) > 100
+    //           ? windowHeight * 0.9 - scaleY(newCases)
+    //           : 100;
+    //       shouldAdd = false;
+    //     }
+    //   }
+
+    //   if (shouldAdd && count > sizeFilter) {
+    //     nodes.push({
+    //       name: countryName,
+    //       x:
+    //         windowWidth / 2 +
+    //         (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
+    //       y:
+    //         windowHeight * 0.5 +
+    //         (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
+    //       targetX: windowWidth / 2,
+    //       targetY:
+    //         windowHeight * 0.9 - scaleY(newCases) > 100
+    //           ? windowHeight * 0.9 - scaleY(newCases)
+    //           : 100,
+    //       size: calculateRadius(count),
+    //       growth: 0.0
+    //     });
+    //   }
+    // }
+
+    // Here we wanna limit to a certain number of nodes if possible
+    // const limitedNumberNodes = nodes.filter(node => {
+
+    // })
+
+    const nodes = [];
 
     for (const countryName in data) {
       const count = data[countryName][date.format(DATE_FORMAT)];
@@ -300,28 +358,11 @@ const Stage = props => {
       const theDayBefore = date.subtract(1, "day").format(DATE_FORMAT);
       const countYesterday = data[countryName][theDayBefore];
 
-      const growthRate =
-        countYesterday === 0 ? 0 : (count - countYesterday) / countYesterday;
-
       const newCases = count - countYesterday;
 
-      console.log(countryName, newCases);
+      console.log(newCases);
 
-      let shouldAdd = true;
-
-      for (const node of nodes) {
-        if (node.name === countryName) {
-          node.size = calculateRadius(count);
-          node.growth = newCases;
-          node.targetY =
-            windowHeight * 0.9 - scaleY(newCases) > 100
-              ? windowHeight * 0.9 - scaleY(newCases)
-              : 100;
-          shouldAdd = false;
-        }
-      }
-
-      if (shouldAdd && count > sizeFilter) {
+      // for (let i = 0; i < newCases; i++) {
         nodes.push({
           name: countryName,
           x:
@@ -335,16 +376,12 @@ const Stage = props => {
             windowHeight * 0.9 - scaleY(newCases) > 100
               ? windowHeight * 0.9 - scaleY(newCases)
               : 100,
-          size: calculateRadius(count),
-          growth: 0.0
+          size: calculateRadius(count) / 10,
         });
-      }
+      // }
     }
 
-    // Here we wanna limit to a certain number of nodes if possible
-    // const limitedNumberNodes = nodes.filter(node => {
-
-    // })
+    console.log(nodes);
 
     if (isAnimating()) {
       // simulation.nodes(simulation.nodes().concat(dots)).alpha(1.0);
