@@ -35,7 +35,7 @@ const countriesToShow = [
   // "France",
   // "Switzerland"
 ];
-const startDate = "2020-01-01";
+const startDate = "2020-01-21";
 let sizeFilter = 0;
 
 let canvas;
@@ -45,12 +45,67 @@ let simulation;
 
 let nodesToAdd = [];
 let duration = 2000; // In milliseconds
+let masterNodeList = [];
 
 let ticks = 0;
 let startTime = false;
 let runAnimation = true;
 
-var generateColor = d3.scaleOrdinal(d3.schemeTableau10);
+const generateColor = d3.scaleOrdinal(d3.schemeTableau10);
+
+// const generateColor = d3
+//   .scaleOrdinal(d3.schemeTableau10)
+//   .range(["#e79774",
+//   "#7763de",
+//   "#57a931",
+//   "#a73bae",
+//   "#4bc762",
+//   "#c571e7",
+//   "#a2bf37",
+//   "#5355ba",
+//   "#d2b235",
+//   "#6684e9",
+//   "#df9331",
+//   "#7155a7",
+//   "#799531",
+//   "#e36dc8",
+//   "#3d7f33",
+//   "#e34594",
+//   "#50c895",
+//   "#dd385d",
+//   "#48c6ca",
+//   "#e8582e",
+//   "#56a6db",
+//   "#c13422",
+//   "#48a78c",
+//   "#b43976",
+//   "#7dba6f",
+//   "#9f4b95",
+//   "#b1b866",
+//   "#bd87db",
+//   "#646c19",
+//   "#9998db",
+//   "#d16c27",
+//   "#426eaf",
+//   "#9f8225",
+//   "#855d99",
+//   "#3e8b5b",
+//   "#b53b3c",
+//   "#286e4e",
+//   "#e4714b",
+//   "#56642b",
+//   "#d98abe",
+//   "#878e51",
+//   "#9d5379",
+//   "#d4ac66",
+//   "#8b3f52",
+//   "#806229",
+//   "#e48197",
+//   "#9e5126",
+//   "#e7706a",
+//   "#b67e4b",
+//   "#ad5159"]);
+
 const scaleY = d3
   .scaleLinear()
   .domain([0, 1000])
@@ -104,13 +159,15 @@ simulation = d3
   .stop();
 
 function isAnimating() {
-  if (simulation.alpha() > simulation.alphaMin()) return true;
-  else return false;
+  // if (simulation.alpha() > simulation.alphaMin()) return true;
+  // else return false;
+
+  return true;
 }
 
 // Render a frame to the canvas
-render = simulation => {
-  const nodes = simulation.nodes();
+render = () => {
+  const nodes = masterNodeList;
 
   // context.clearRect(
   //   0,
@@ -119,13 +176,13 @@ render = simulation => {
   //   context.canvas.clientHeight
   // );
 
+  // if (nodes.length === 0) return;
   nodes.forEach((node, iteration) => {
-    if (node.size < calculateRadius(sizeFilter)) return;
+    // if (node.size < calculateRadius(sizeFilter)) return;
 
     context.beginPath();
     context.arc(node.x, node.y, node.size, 0, 2 * Math.PI);
-    context.fillStyle =
-      node.name === "Australia" ? "#ff0000" : generateColor(iteration); //"rgba(140, 193, 204, 1.0)";
+    context.fillStyle = generateColor(node.name); //"grey"; // node.name === "Australia" ? "#ff0000" : generateColor(iteration); //"rgba(140, 193, 204, 1.0)";
     context.fill();
   });
 
@@ -141,21 +198,23 @@ render = simulation => {
   //   context.fillText(node.name, node.x, node.y - 10);
   // }
 
+  // nodes.shift();
+
   return nodes;
 };
 
 const processFrame = () => {
-  const newNodes = [];
+  // const newNodes = [];
 
-  const nodes = render(simulation);
+  const nodes = render();
 
-  simulation.nodes(nodes.concat(newNodes)).tick();
+  // simulation.nodes(nodes).tick();
 
-  if (isAnimating()) {
-    requestAnimationFrame(t => {
-      processFrame(t);
-    });
-  }
+  // if (isAnimating()) {
+  //   requestAnimationFrame(t => {
+  //     processFrame(t);
+  //   });
+  // }
 };
 
 // React component starts here
@@ -168,68 +227,6 @@ const Stage = props => {
   const init = async () => {
     canvas = d3.select(canvasEl.current);
     context = canvas.node().getContext("2d");
-
-    // This is now handled in the simplified function
-    // animate = time => {
-    //   // console.log(simulation.alpha());
-    //   if (!startTime) {
-    //     startTime = time;
-    //   }
-
-    //   const progress = time - startTime;
-    //   const nodes = render(simulation);
-    //   const newNodes = [];
-
-    //   for (let i = 0; i < nodesToAdd.length; i++) {
-    //     const node = nodesToAdd[i];
-    //     if (node.delay < progress) {
-    //       // Here we are simulating new dots "dividing" from dots already there
-    //       // So we randomly select nodes until we find one that matches
-
-    //       // Make an array of random numbers
-    //       // and go through until we find one
-    //       for (var a = [], j = 0; j < nodes.length; ++j) a[j] = j;
-    //       const shuffledArray = shuffle(a);
-
-    //       for (let randomNumber of shuffledArray) {
-    //         if (nodes[randomNumber].groupName === node.groupName) {
-    //           node.y = nodes[randomNumber].y;
-    //           node.x = nodes[randomNumber].x;
-    //           break;
-    //         }
-    //       }
-
-    //       newNodes.push(node);
-    //       nodesToAdd.splice(i, 1);
-    //       i--;
-    //     }
-    //   }
-
-    //   simulation.nodes(nodes.concat(newNodes)).tick();
-
-    //   ticks++;
-
-    //   if (
-    //     (runAnimation && ticks < ANIMATION_TICK_LIMIT) ||
-    //     nodesToAdd.length > 0
-    //   ) {
-    //     isAnimating = true;
-
-    //     if (FPS < 60) {
-    //       setTimeout(() => {
-    //         requestAnimationFrame(t => {
-    //           animate(t, nodesToAdd); // nodesToAdd doesn't matter for now
-    //         });
-    //       }, 1000 / FPS);
-    //     } else {
-    //       requestAnimationFrame(t => {
-    //         animate(t, nodesToAdd); // nodesToAdd doesn't matter for now
-    //       });
-    //     }
-    //   } else {
-    //     isAnimating = false;
-    //   }
-    // };
 
     const response = await getData(
       "https://www.abc.net.au/dat/news/interactives/covid19-data/hybrid-country-totals.json"
@@ -244,46 +241,14 @@ const Stage = props => {
       }
     }
 
-    console.log(filteredData);
-
     if (filterCountries) setData(filteredData);
     else setData(response.data);
   };
 
   const handleClick = () => {
-    console.log("User interaction!!!");
     const newDate = date.add(1, "day");
+    console.log(newDate.format());
     setDate(newDate);
-
-    // let dots = [];
-
-    // startTime = false;
-    // ticks = 0;
-
-    // for (let i = 0; i < 10; i++) {
-    //   dots.push({
-    //     groupName: "one",
-    //     x:
-    //       windowWidth / 2 +
-    //       (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
-    //     y:
-    //       windowHeight * 0.5 +
-    //       (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
-    //     targetX: windowWidth / 2,
-    //     targetY: windowHeight * 0.5,
-    //     size: Math.ceil(Math.random() * 20 + 2)
-    //   });
-    // }
-
-    // if (isAnimating()) {
-    //   simulation.nodes(simulation.nodes().concat(dots)).alpha(1.0);
-    // } else {
-    //   simulation.nodes(simulation.nodes().concat(dots)).alpha(1.0);
-
-    //   requestAnimationFrame(t => {
-    //     processFrame(t);
-    //   });
-    // }
   };
 
   // Fires when we get data changes
@@ -291,62 +256,6 @@ const Stage = props => {
   useEffect(() => {
     // Wait until we have data
     if (typeof data === "null") return;
-
-    // let nodes = simulation.nodes();
-
-    // for (const countryName in data) {
-    //   const count = data[countryName][date.format(DATE_FORMAT)];
-    //   if (typeof count === "undefined" || count === 0) continue;
-
-    //   // Calculate growth rate
-    //   const theDayBefore = date.subtract(1, "day").format(DATE_FORMAT);
-    //   const countYesterday = data[countryName][theDayBefore];
-
-    //   const growthRate =
-    //     countYesterday === 0 ? 0 : (count - countYesterday) / countYesterday;
-
-    //   const newCases = count - countYesterday;
-
-    //   console.log(countryName, newCases);
-
-    //   let shouldAdd = true;
-
-    //   for (const node of nodes) {
-    //     if (node.name === countryName) {
-    //       node.size = calculateRadius(count);
-    //       node.growth = newCases;
-    //       node.targetY =
-    //         windowHeight * 0.9 - scaleY(newCases) > 100
-    //           ? windowHeight * 0.9 - scaleY(newCases)
-    //           : 100;
-    //       shouldAdd = false;
-    //     }
-    //   }
-
-    //   if (shouldAdd && count > sizeFilter) {
-    //     nodes.push({
-    //       name: countryName,
-    //       x:
-    //         windowWidth / 2 +
-    //         (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
-    //       y:
-    //         windowHeight * 0.5 +
-    //         (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
-    //       targetX: windowWidth / 2,
-    //       targetY:
-    //         windowHeight * 0.9 - scaleY(newCases) > 100
-    //           ? windowHeight * 0.9 - scaleY(newCases)
-    //           : 100,
-    //       size: calculateRadius(count),
-    //       growth: 0.0
-    //     });
-    //   }
-    // }
-
-    // Here we wanna limit to a certain number of nodes if possible
-    // const limitedNumberNodes = nodes.filter(node => {
-
-    // })
 
     const nodes = [];
 
@@ -360,39 +269,46 @@ const Stage = props => {
 
       const newCases = count - countYesterday;
 
-      console.log(newCases);
+      if (newCases > 500) {
+        console.log(countryName, newCases, generateColor(countryName));
+      }
+      
 
-      // for (let i = 0; i < newCases; i++) {
+      for (let i = 0; i < newCases; i++) {
         nodes.push({
           name: countryName,
-          x:
-            windowWidth / 2 +
-            (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
-          y:
-            windowHeight * 0.5 +
-            (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
+          x: windowWidth * Math.random(),
+          // windowWidth / 2 +
+          // (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
+          y: windowHeight * Math.random(),
+          // windowHeight * 0.5 +
+          // (Math.random() * RANDOM_INIT_DISTANCE - RANDOM_INIT_DISTANCE / 2),
           targetX: windowWidth / 2,
           targetY:
             windowHeight * 0.9 - scaleY(newCases) > 100
               ? windowHeight * 0.9 - scaleY(newCases)
               : 100,
-          size: calculateRadius(count) / 10,
+          size: 4 // calculateRadius(count) / 10
         });
-      // }
+      }
     }
 
-    console.log(nodes);
+    // if (isAnimating()) {
+    //   // simulation.nodes(simulation.nodes().concat(dots)).alpha(1.0);
+    //   // simulation.nodes(nodes).alpha(1.0);
 
-    if (isAnimating()) {
-      // simulation.nodes(simulation.nodes().concat(dots)).alpha(1.0);
-      simulation.nodes(nodes).alpha(1.0);
-    } else {
-      simulation.nodes(nodes).alpha(1.0);
+    //   masterNodeList = nodes;
 
-      requestAnimationFrame(t => {
-        processFrame(t);
-      });
-    }
+    // } else {
+    //   // simulation.nodes(nodes).alpha(1.0);
+    //   masterNodeList = nodes;
+
+    //   requestAnimationFrame(t => {
+    //     processFrame(t);
+    //   });
+    // }
+    masterNodeList = nodes;
+    processFrame();
   }, [data, date]);
 
   // Run once on mount
@@ -416,7 +332,7 @@ const Stage = props => {
 
   return (
     <div className={styles.root}>
-      <div className={styles.date}>{date.format(DATE_FORMAT)}</div>
+      {/* <div className={styles.date}>{date.format(DATE_FORMAT)}</div> */}
       {/* <InputRange
         maxValue={20}
         minValue={0}
