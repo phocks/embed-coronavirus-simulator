@@ -270,9 +270,11 @@ const Stage = props => {
       const newCases = count - countYesterday;
 
       if (newCases > 500) {
-        console.log(countryName, newCases, generateColor(countryName));
+        console.log(
+          `%c ${countryName}, ${newCases}, ${generateColor(countryName)}`,
+          `background: ${generateColor(countryName)}; color: white`
+        );
       }
-      
 
       for (let i = 0; i < newCases; i++) {
         nodes.push({
